@@ -882,13 +882,13 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverIncludedServicesForService:(CBService *)service error:(NSError *)error {
-    [peripheral discoverCharacteristics:nil forService:service]; // discover characteristics for included service
+    NSLog(@"==> didDiscoverIncludedServicesForService %@", service);
 
     NSMutableSet *latch = [retrieveServicesLatches valueForKey:[peripheral uuidAsString]];
     [latch addObject:service];
     [retrieveServicesLatches setObject:latch forKey:[peripheral uuidAsString]];
 
-    NSLog(@"==> didDiscoverIncludedServicesForService %@", service);
+    [peripheral discoverCharacteristics:nil forService:service]; // discover characteristics for included service
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
@@ -909,7 +909,7 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
         // Call success callback for connect
         RCTResponseSenderBlock retrieveServiceCallback = [retrieveServicesCallbacks valueForKey:peripheralUUIDString];
         if (retrieveServiceCallback) {
-            NSLog(@"==> services %@", [peripheral asDictionary]);
+            NSLog(@"==> servicesCallback %@", [peripheral asDictionary]);
             retrieveServiceCallback(@[[NSNull null], [peripheral asDictionary]]);
             [retrieveServicesCallbacks removeObjectForKey:peripheralUUIDString];
         }
