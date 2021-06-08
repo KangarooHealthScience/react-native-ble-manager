@@ -875,14 +875,20 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
     [servicesForPeriperal addObjectsFromArray:peripheral.services];
     [retrieveServicesLatches setObject:servicesForPeriperal forKey:[peripheral uuidAsString]];
     for (CBService *service in peripheral.services) {
-        NSLog(@"Service %@ %@", service.UUID, service.description);
-        [peripheral discoverIncludedServices:nil forService:service]; // discover included services
+        NSLog(@"==> didDiscoverServices %@", service);
         [peripheral discoverCharacteristics:nil forService:service]; // discover characteristics for service
+        [peripheral discoverIncludedServices:nil forService:service]; // discover included services
     }
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverIncludedServicesForService:(CBService *)service error:(NSError *)error {
     [peripheral discoverCharacteristics:nil forService:service]; // discover characteristics for included service
+
+    NSMutableSet *latch = [retrieveServicesLatches valueForKey:[peripheral uuidAsString]];
+    [latch addObject:service];
+    [retrieveServicesLatches setObject:latch forKey:[peripheral uuidAsString]];
+
+    NSLog(@"==> didDiscoverIncludedServicesForService %@", service);
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
@@ -890,7 +896,10 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
         NSLog(@"Error: %@", error);
         return;
     }
-    NSLog(@"Characteristics For Service Discover");
+
+    for (CBCharacteristic *c in service.characteristics) {
+        NSLog(@"==> didDiscoverCharacteristicsForService %@ %@", c.UUID, c.UUID.UUIDString);
+    }
     
     NSString *peripheralUUIDString = [peripheral uuidAsString];
     NSMutableSet *latch = [retrieveServicesLatches valueForKey:peripheralUUIDString];
@@ -900,6 +909,7 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
         // Call success callback for connect
         RCTResponseSenderBlock retrieveServiceCallback = [retrieveServicesCallbacks valueForKey:peripheralUUIDString];
         if (retrieveServiceCallback) {
+            NSLog(@"==> services %@", [peripheral asDictionary]);
             retrieveServiceCallback(@[[NSNull null], [peripheral asDictionary]]);
             [retrieveServicesCallbacks removeObjectForKey:peripheralUUIDString];
         }
