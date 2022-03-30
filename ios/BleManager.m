@@ -17,7 +17,7 @@ RCT_EXPORT_MODULE();
 @synthesize manager;
 @synthesize peripherals;
 @synthesize scanTimer;
-bool hasListeners;
+bool hasBleListeners;
 
 - (instancetype)init
 {
@@ -43,11 +43,11 @@ bool hasListeners;
 }
 
 -(void)startObserving {
-    hasListeners = YES;
+    hasBleListeners = YES;
 }
 
 -(void)stopObserving {
-    hasListeners = NO;
+    hasBleListeners = NO;
 }
 
 -(void)bridgeReloading {
@@ -98,7 +98,7 @@ bool hasListeners;
         readCallback(@[[NSNull null], ([characteristic.value length] > 0) ? [characteristic.value toArray] : [NSNull null]]);
         [readCallbacks removeObjectForKey:key];
     } else {
-        if (hasListeners) {
+        if (hasBleListeners) {
             [self sendEventWithName:@"BleManagerDidUpdateValueForCharacteristic" body:@{@"peripheral": peripheral.uuidAsString, @"characteristic":characteristic.UUID.UUIDString, @"service":characteristic.service.UUID.UUIDString, @"value": ([characteristic.value length] > 0) ? [characteristic.value toArray] : [NSNull null]}];
         }
     }
@@ -371,7 +371,7 @@ RCT_EXPORT_METHOD(stopScan:(nonnull RCTResponseSenderBlock)callback)
         self.scanTimer = nil;
     }
     [manager stopScan];
-    if (hasListeners) {
+    if (hasBleListeners) {
         [self sendEventWithName:@"BleManagerStopScan" body:@{}];
     }
     callback(@[[NSNull null]]);
@@ -382,7 +382,7 @@ RCT_EXPORT_METHOD(stopScan:(nonnull RCTResponseSenderBlock)callback)
     NSLog(@"Stop scan");
     self.scanTimer = nil;
     [manager stopScan];
-    if (hasListeners) {
+    if (hasBleListeners) {
         if (self.bridge) {
             [self sendEventWithName:@"BleManagerStopScan" body:@{}];
         }
@@ -399,7 +399,7 @@ RCT_EXPORT_METHOD(stopScan:(nonnull RCTResponseSenderBlock)callback)
     [peripheral setAdvertisementData:advertisementData RSSI:RSSI];
     
     NSLog(@"Discover peripheral: %@", [peripheral name]);
-    if (hasListeners) {
+    if (hasBleListeners) {
         [self sendEventWithName:@"BleManagerDiscoverPeripheral" body:[peripheral asDictionary]];
     }
 }
@@ -778,7 +778,7 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
             [connectCallbacks removeObjectForKey:[peripheral uuidAsString]];
         }
         
-        if (hasListeners) {
+        if (hasBleListeners) {
             [self sendEventWithName:@"BleManagerConnectPeripheral" body:@{@"peripheral": [peripheral uuidAsString]}];
         }
     });
@@ -859,7 +859,7 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
         }
     }
     
-    if (hasListeners) {
+    if (hasBleListeners) {
         [self sendEventWithName:@"BleManagerDisconnectPeripheral" body:@{@"peripheral": [peripheral uuidAsString]}];
     }
 }
@@ -950,7 +950,7 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
 {
     NSString *stateName = [self centralManagerStateToString:central.state];
-    if (hasListeners) {
+    if (hasBleListeners) {
         [self sendEventWithName:@"BleManagerDidUpdateState" body:@{@"state":stateName}];
     }
 }
